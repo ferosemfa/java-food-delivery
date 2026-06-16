@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-cassandra
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cassandra
+spec:
+  serviceName: {{ include "food-delivery.fullname" . }}-cassandra
+  replicas: {{ .Values.cassandra.replicas }}
+  selector:
+    matchLabels:
+      {{- include "food-delivery.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: cassandra
+  template:
+    metadata:
+      labels:
+        {{- include "food-delivery.labels" . | nindent 8 }}
+        app.kubernetes.io/component: cassandra
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: cassandra
+          image: cassandra:5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9042
+              name: cql
+            - containerPort: 7000
+              name: inter-node
+            - containerPort: 7001
+              name: ssl
+            - containerPort: 7199
+              name: jmx
+            - containerPort: 9160
+              name: thrift
+          env:
+            - name: CASSANDRA_CLUSTER_NAME
+              value: {{ .Values.cassandra.clusterName | quote }}
+            - name: CASSANDRA_DC
+              value: {{ .Values.cassandra.dc | quote }}
+            - name: CASSANDRA_RACK
+              value: {{ .Values.cassandra.rack | quote }}
+            - name: CASSANDRA_SEEDS
+              value: {{ include "food-delivery.fullname" . }}-cassandra-0.{{ include "food-delivery.fullname" . }}-cassandra.{{ .Release.Namespace }}.svc.cluster.local
+            - name: CASSANDRA_ENDPOINT_SNITCH
+              value: {{ .Values.cassandra.snitch }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - nodetool status | grep -E "^UN\s+" | grep -q $(hostname -f | cut -d. -f1)
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.resources.cassandra | nindent 12 }}
+          volumeMounts:
+            - name: cassandra-data
+              mountPath: /var/lib/cassandra
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: cassandra-data
+      spec:
+        accessModes: [ {{ .Values.persistence.cassandra.accessMode | quote }} ]
+        resources:
+          requests:
+            storage: {{ .Values.persistence.cassandra.size }}
+  {{- end }}

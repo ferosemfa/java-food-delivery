@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  namespace: food-delivery
+  labels:
+    app: food-delivery
+    component: cassandra
+spec:
+  serviceName: cassandra-service
+  replicas: 2
+  selector:
+    matchLabels:
+      app: food-delivery
+      component: cassandra
+  template:
+    metadata:
+      labels:
+        app: food-delivery
+        component: cassandra
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: cassandra
+          image: cassandra:5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9042
+              name: cql
+            - containerPort: 7000
+              name: inter-node
+            - containerPort: 7001
+              name: ssl
+            - containerPort: 7199
+              name: jmx
+            - containerPort: 9160
+              name: thrift
+          env:
+            - name: CASSANDRA_CLUSTER_NAME
+              value: "FoodDeliveryCluster"
+            - name: CASSANDRA_DC
+              value: "dc1"
+            - name: CASSANDRA_RACK
+              value: "rack1"
+            - name: CASSANDRA_SEEDS
+              value: cassandra-0.cassandra-service.food-delivery.svc.cluster.local
+            - name: CASSANDRA_ENDPOINT_SNITCH
+              value: GossipingPropertyFileSnitch
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - nodetool status | grep -E "^UN\s+" | grep -q $(hostname -f | cut -d. -f1)
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "4Gi"
+              cpu: "1"
+          volumeMounts:
+            - name: cassandra-data
+              mountPath: /var/lib/cassandra
+  volumeClaimTemplates:
+    - metadata:
+        name: cassandra-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 10Gi

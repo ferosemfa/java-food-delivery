@@ -1,0 +1,123 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: food-delivery
+
+  data:
+    cassandra:
+      keyspace-name: ${CASSANDRA_KEYSPACE:food_delivery}
+      contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+      port: ${CASSANDRA_PORT:9042}
+      local-datacenter: ${CASSANDRA_DATACENTER:datacenter1}
+      schema-action: CREATE_IF_NOT_EXISTS
+      request:
+        timeout: 10s
+      connection:
+        connect-timeout: 10s
+        init-query-timeout: 10s
+
+    redis:
+      host: ${KEYDB_HOST:localhost}
+      port: ${KEYDB_PORT:6379}
+      password: ${KEYDB_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: -1ms
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
+        compression.type: snappy
+    consumer:
+      group-id: food-delivery-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.fooddelivery.*
+        auto.offset.reset: earliest
+        enable.auto.commit: false
+        max.poll.records: 100
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+      concurrency: 3
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd'T'HH:mm:ss'Z'
+    time-zone: UTC
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - email
+              - profile
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+stripe:
+  api-key: ${STRIPE_API_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+razorpay:
+  api-key: ${RAZORPAY_API_KEY:}
+  api-secret: ${RAZORPAY_API_SECRET:}
+
+otp:
+  ttl-minutes: ${OTP_TTL_MINUTES:5}
+  length: ${OTP_LENGTH:6}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.fooddelivery: ${LOG_LEVEL_APP:DEBUG}
+    org.springframework.security: INFO
+    org.apache.kafka: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method

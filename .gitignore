@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/target/
+
+# Build outputs
+frontend/dist/
+frontend/build/
+
+# Environment files (NEVER commit secrets)
+docker/.env
+.env
+*.env
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+.mvn/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes (not files but just in case)
+docker/volumes/
+
+# Logs
+*.log
+logs/
+
+# Python cache
+__pycache__/
+*.pyc

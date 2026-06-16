@@ -1,0 +1,133 @@
+# Global
+replicaCount: 2
+
+image:
+  repository: food-delivery-backend
+  tag: latest
+  pullPolicy: Always
+
+frontend:
+  image:
+    repository: food-delivery-frontend
+    tag: latest
+    pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8080
+
+frontendService:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: food-delivery.example.com
+  tls:
+    enabled: true
+    secretName: food-delivery-tls
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+config:
+  SPRING_PROFILES_ACTIVE: production
+  CASSANDRA_KEYSPACE: food_delivery
+  JWT_EXPIRATION: "86400000"
+  CASSANDRA_HOSTS: cassandra-service
+  KAFKA_BROKER_URL: kafka-service:9092
+  KEYDB_HOST: keydb-service
+
+secrets:
+  JWT_SECRET: Zm9vZC1kZWxpdmVyeS1qd3Qtc2VjcmV0LWtleS0yMDI0
+  STRIPE_API_KEY: c2tfdGVzdF81MU1uZFhYWHlRbVh4eHh4eHh4eHh4eHh4
+  GOOGLE_MAPS_API_KEY: QUl6YVN5REV4YW1wbGVHb29nbGVNYXBzS2V5
+  MAIL_PASSWORD: cGxhY2Vob2xkZXItbWFpbC1wYXNzd29yZA==
+  DB_PASSWORD: cGxhY2Vob2xkZXItZGItcGFzc3dvcmQ=
+
+resources:
+  backend:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  frontend:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  cassandra:
+    requests:
+      memory: 2Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 1
+  keydb:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 300m
+  kafka:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1
+  zookeeper:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+persistence:
+  enabled: true
+  cassandra:
+    size: 10Gi
+    accessMode: ReadWriteOnce
+  kafka:
+    size: 10Gi
+    accessMode: ReadWriteOnce
+  keydb:
+    size: 5Gi
+    accessMode: ReadWriteOnce
+  zookeeper:
+    size: 5Gi
+    accessMode: ReadWriteOnce
+
+kafka:
+  replicas: 2
+  offsetsTopicReplicationFactor: 2
+  defaultReplicationFactor: 2
+  numPartitions: 3
+  logRetentionHours: 168
+  autoCreateTopics: true
+
+cassandra:
+  replicas: 2
+  clusterName: FoodDeliveryCluster
+  dc: dc1
+  rack: rack1
+  snitch: GossipingPropertyFileSnitch
+
+zookeeper:
+  replicas: 1
+  clientPort: 2181
+  tickTime: 2000
+  syncLimit: 2
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70

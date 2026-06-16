@@ -1,0 +1,123 @@
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  keydb-data:
+  cassandra-data:
+  kafka-data:
+  zookeeper-data:
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: food-delivery-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - app-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: food-delivery-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - app-network
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: food-delivery-kafdrop
+    ports:
+      - "9000:9000"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKERCONNECT: kafka:29092
+      JVM_OPTS: -Xms32M -Xmx64M
+    networks:
+      - app-network
+
+  keydb:
+    image: eqalpha/keydb:latest
+    container_name: food-delivery-keydb
+    ports:
+      - "6379:6379"
+    volumes:
+      - keydb-data:/data
+    command: keydb-server --appendonly yes
+    networks:
+      - app-network
+
+  cassandra:
+    image: cassandra:5
+    container_name: food-delivery-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: FoodDeliveryCluster
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_RACK: rack1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_NUM_TOKENS: 128
+      CASSANDRA_SEEDS: cassandra
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: food-delivery-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - docker/.env
+    depends_on:
+      keydb:
+        condition: service_started
+      cassandra:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: food-delivery-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network

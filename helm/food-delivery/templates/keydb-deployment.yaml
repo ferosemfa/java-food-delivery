@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-keydb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keydb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "food-delivery.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: keydb
+  template:
+    metadata:
+      labels:
+        {{- include "food-delivery.labels" . | nindent 8 }}
+        app.kubernetes.io/component: keydb
+    spec:
+      containers:
+        - name: keydb
+          image: eq-alpha/keydb:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+              name: keydb
+          readinessProbe:
+            exec:
+              command:
+                - keydb-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - keydb-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources.keydb | nindent 12 }}
+          volumeMounts:
+            - name: keydb-data
+              mountPath: /data
+      volumes:
+        - name: keydb-data
+          persistentVolumeClaim:
+            claimName: {{ include "food-delivery.fullname" . }}-keydb-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-keydb-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keydb
+spec:
+  accessModes:
+    - {{ .Values.persistence.keydb.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.keydb.size }}

@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-zookeeper
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper
+spec:
+  replicas: {{ .Values.zookeeper.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "food-delivery.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: zookeeper
+  template:
+    metadata:
+      labels:
+        {{- include "food-delivery.labels" . | nindent 8 }}
+        app.kubernetes.io/component: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: confluentinc/cp-zookeeper:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.zookeeper.clientPort }}
+              name: client
+            - containerPort: 2888
+              name: peer
+            - containerPort: 3888
+              name: leader
+          env:
+            - name: ZOOKEEPER_CLIENT_PORT
+              value: {{ .Values.zookeeper.clientPort | quote }}
+            - name: ZOOKEEPER_TICK_TIME
+              value: {{ .Values.zookeeper.tickTime | quote }}
+            - name: ZOOKEEPER_SYNC_LIMIT
+              value: {{ .Values.zookeeper.syncLimit | quote }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - echo ruok | nc -w 2 localhost {{ .Values.zookeeper.clientPort }} | grep imok
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - echo ruok | nc -w 2 localhost {{ .Values.zookeeper.clientPort }} | grep imok
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources.zookeeper | nindent 12 }}
+          volumeMounts:
+            - name: zookeeper-data
+              mountPath: /var/lib/zookeeper/data
+            - name: zookeeper-log
+              mountPath: /var/lib/zookeeper/log
+      volumes:
+        - name: zookeeper-data
+          persistentVolumeClaim:
+            claimName: {{ include "food-delivery.fullname" . }}-zookeeper-pvc
+        - name: zookeeper-log
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-zookeeper-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper
+spec:
+  accessModes:
+    - {{ .Values.persistence.zookeeper.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.zookeeper.size }}

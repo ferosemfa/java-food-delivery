@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "food-delivery.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "food-delivery.labels" . | nindent 4 }}
+data:
+  app.properties: |
+    SPRING_PROFILES_ACTIVE={{ .Values.config.SPRING_PROFILES_ACTIVE }}
+    CASSANDRA_KEYSPACE={{ .Values.config.CASSANDRA_KEYSPACE }}
+    JWT_EXPIRATION={{ .Values.config.JWT_EXPIRATION }}
+  CASSANDRA_HOSTS: "{{ .Values.config.CASSANDRA_HOSTS }}"
+  KAFKA_BROKER_URL: "{{ .Values.config.KAFKA_BROKER_URL }}"
+  KEYDB_HOST: "{{ .Values.config.KEYDB_HOST }}"
