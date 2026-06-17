@@ -11,12 +11,11 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends CassandraRepository<User, UUID> {
 
+    @Query("SELECT * FROM users WHERE email = ?0 ALLOW FILTERING")
     Optional<User> findByEmail(String email);
 
+    @Query("SELECT * FROM users WHERE phone = ?0 ALLOW FILTERING")
     Optional<User> findByPhone(String phone);
 
-    @Query("SELECT * FROM users WHERE email = ?0 ALLOW FILTERING")
-    Optional<User> findUserByEmail(String email);
 
-    boolean existsByEmail(String email);
 }
