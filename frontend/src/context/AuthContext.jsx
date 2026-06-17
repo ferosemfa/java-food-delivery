@@ -34,7 +34,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     try {
       const response = await apiLogin(credentials);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const { data: authData } = response.data;
+      const { accessToken: t, refreshToken: rt, ...u } = authData;
       persistAuth(t, rt, u);
       toast.success(`Welcome back, ${u.name || u.email}!`);
       return response.data;
@@ -48,7 +49,8 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (userData) => {
     try {
       const response = await apiRegister(userData);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const { data: authData } = response.data;
+      const { accessToken: t, refreshToken: rt, ...u } = authData;
       if (t && u) {
         persistAuth(t, rt, u);
       }
@@ -64,7 +66,8 @@ export function AuthProvider({ children }) {
   const verifyOtp = useCallback(async (otpData) => {
     try {
       const response = await apiVerifyOtp(otpData);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const { data: authData } = response.data;
+      const { accessToken: t, refreshToken: rt, ...u } = authData;
       if (t && u) {
         persistAuth(t, rt, u);
       }
@@ -81,7 +84,8 @@ export function AuthProvider({ children }) {
     if (!refreshTokenValue) return null;
     try {
       const response = await apiRefreshToken({ refreshToken: refreshTokenValue });
-      const { token: t, refreshToken: rt } = response.data;
+      const { data: authData } = response.data;
+      const { accessToken: t, refreshToken: rt } = authData;
       setToken(t);
       setRefreshTokenValue(rt);
       localStorage.setItem('token', t);
