@@ -11,21 +11,21 @@ USE food_delivery;
 INSERT INTO users (user_id, name, email, phone, password_hash, location, role, created_at)
 VALUES (
     uuid(), 'John Doe', 'customer@fooddelivery.com', '+1-555-0101',
-    '$2a$10$dummyhashforcustomerseed', '123 Main St, New York, NY',
+    '$2b$12$Ks7jZ0zTdLpALsHTn8FyVuct.eZesZOv.si23nz1AoIrbUNsrz1Qy', '123 Main St, New York, NY',
     'customer', toTimestamp(now())
 );
 
 INSERT INTO users (user_id, name, email, phone, password_hash, location, role, created_at)
 VALUES (
     uuid(), 'Pizza Place', 'vendor@fooddelivery.com', '+1-555-0201',
-    '$2a$10$dummyhashforvendorseed', '456 Oak Ave, New York, NY',
+    '$2b$12$b2ZTUMpQsHYCFVcQxsXf7OYME6QkM4uM.V3D/1atF/Z/sZy9bBxGq', '456 Oak Ave, New York, NY',
     'vendor', toTimestamp(now())
 );
 
 INSERT INTO users (user_id, name, email, phone, password_hash, location, role, created_at)
 VALUES (
     uuid(), 'Admin User', 'admin@fooddelivery.com', '+1-555-0001',
-    '$2a$10$dummyhashforadminseed', '100 Admin Plaza, New York, NY',
+    '$2b$12$DeFrX0si/8x9s0gUymVwd.sMNWpWznwPSyONlnEc/dfUeVVq8Uux6', '100 Admin Plaza, New York, NY',
     'admin', toTimestamp(now())
 );
 
@@ -35,7 +35,7 @@ VALUES (
 INSERT INTO vendors (vendor_id, name, email, phone, password_hash, address, rating, menu_items, is_approved, created_at)
 VALUES (
     uuid(), 'Pizza Paradise', 'contact@pizzaparadise.com', '+1-555-1001',
-    '$2a$10$dummyhashforvendor', '789 Pizza St, New York, NY', 4.5,
+    '$2b$12$b2ZTUMpQsHYCFVcQxsXf7OYME6QkM4uM.V3D/1atF/Z/sZy9bBxGq', '789 Pizza St, New York, NY', 4.5,
     ['Margherita Pizza', 'Pepperoni Pizza', 'BBQ Chicken Pizza', 'Veggie Supreme', 'Garlic Bread'],
     true, toTimestamp(now())
 );
@@ -43,7 +43,7 @@ VALUES (
 INSERT INTO vendors (vendor_id, name, email, phone, password_hash, address, rating, menu_items, is_approved, created_at)
 VALUES (
     uuid(), 'Burger Barn', 'contact@burgerbarn.com', '+1-555-1002',
-    '$2a$10$dummyhashforvendor', '321 Burger Ln, New York, NY', 4.2,
+    '$2b$12$b2ZTUMpQsHYCFVcQxsXf7OYME6QkM4uM.V3D/1atF/Z/sZy9bBxGq', '321 Burger Ln, New York, NY', 4.2,
     ['Classic Burger', 'Cheeseburger', 'Bacon Deluxe', 'Chicken Sandwich', 'Veggie Burger'],
     true, toTimestamp(now())
 );

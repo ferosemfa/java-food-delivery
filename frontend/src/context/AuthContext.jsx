@@ -15,9 +15,22 @@ export function AuthProvider({ children }) {
     const storedRefreshToken = localStorage.getItem('refreshToken');
     const storedUser = localStorage.getItem('user');
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setRefreshTokenValue(storedRefreshToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && typeof parsed === 'object') {
+          setToken(storedToken);
+          setRefreshTokenValue(storedRefreshToken);
+          setUser(parsed);
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        }
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -34,7 +47,10 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     try {
       const response = await apiLogin(credentials);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const d = response.data.data || response.data;
+      const t = d.accessToken || d.token;
+      const rt = d.refreshToken;
+      const u = { id: d.userId, email: d.email, name: d.name, role: d.role };
       persistAuth(t, rt, u);
       toast.success(`Welcome back, ${u.name || u.email}!`);
       return response.data;
@@ -48,7 +64,10 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (userData) => {
     try {
       const response = await apiRegister(userData);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const d = response.data.data || response.data;
+      const t = d.accessToken || d.token;
+      const rt = d.refreshToken;
+      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: d.role } : null);
       if (t && u) {
         persistAuth(t, rt, u);
       }
@@ -64,7 +83,10 @@ export function AuthProvider({ children }) {
   const verifyOtp = useCallback(async (otpData) => {
     try {
       const response = await apiVerifyOtp(otpData);
-      const { token: t, refreshToken: rt, user: u } = response.data;
+      const d = response.data.data || response.data;
+      const t = d.accessToken || d.token;
+      const rt = d.refreshToken;
+      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: d.role } : null);
       if (t && u) {
         persistAuth(t, rt, u);
       }
@@ -81,7 +103,9 @@ export function AuthProvider({ children }) {
     if (!refreshTokenValue) return null;
     try {
       const response = await apiRefreshToken({ refreshToken: refreshTokenValue });
-      const { token: t, refreshToken: rt } = response.data;
+      const d = response.data.data || response.data;
+      const t = d.accessToken || d.token;
+      const rt = d.refreshToken;
       setToken(t);
       setRefreshTokenValue(rt);
       localStorage.setItem('token', t);
