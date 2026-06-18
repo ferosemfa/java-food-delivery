@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
       try {
         const parsed = JSON.parse(storedUser);
         if (parsed && typeof parsed === 'object') {
+          if (parsed.role) parsed.role = parsed.role.toUpperCase();
           setToken(storedToken);
           setRefreshTokenValue(storedRefreshToken);
           setUser(parsed);
@@ -50,7 +51,7 @@ export function AuthProvider({ children }) {
       const d = response.data.data || response.data;
       const t = d.accessToken || d.token;
       const rt = d.refreshToken;
-      const u = { id: d.userId, email: d.email, name: d.name, role: d.role };
+      const u = { id: d.userId, email: d.email, name: d.name, role: (d.role || '').toUpperCase() };
       persistAuth(t, rt, u);
       toast.success(`Welcome back, ${u.name || u.email}!`);
       return response.data;
@@ -67,7 +68,7 @@ export function AuthProvider({ children }) {
       const d = response.data.data || response.data;
       const t = d.accessToken || d.token;
       const rt = d.refreshToken;
-      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: d.role } : null);
+      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: (d.role || '').toUpperCase() } : null);
       if (t && u) {
         persistAuth(t, rt, u);
       }
@@ -86,7 +87,7 @@ export function AuthProvider({ children }) {
       const d = response.data.data || response.data;
       const t = d.accessToken || d.token;
       const rt = d.refreshToken;
-      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: d.role } : null);
+      const u = d.user || (d.id ? { id: d.userId, email: d.email, name: d.name, role: (d.role || '').toUpperCase() } : null);
       if (t && u) {
         persistAuth(t, rt, u);
       }
